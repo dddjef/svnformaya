@@ -18,33 +18,7 @@ import time
 
 
 class MayaSVN:
-
-    def login_dialog(self):
-        global app
-        if(self.maya_enabled):
-            app = QtGui.QApplication(sys.argv)
-            login = LoginDialog()
-            login.show()
-            time.sleep(0.02)
-            app.exec_()
-        return login.getLoginDetails()
-    
-    def get_login( self,realm, username, may_save):
-        #Open Dialog ask for username & pass
-        username, password = self.login_dialog()
-        dialogRet = True
-        return dialogRet, username, password, True
-
-    def ssl_server_trust_prompt( self,trust_dict ):
-        return True, 3, True
-
-    def get_maya_project_path(self):
-        if(self.maya_enabled):
-            self.mayaProjectPath = "E:\\MayaSVN\\testProject\\"
-            #self.mayaProjectPath =  cmds.workspace(q=True,rd=True)
-        else:
-            self.mayaProjectPath = "E:\\MayaSVN\\testProject\\"
-    
+    #Class Contructor
     def __init__(self):
         #Setup Debugging Variables for outside of Maya
         self.maya_enabled = True
@@ -59,10 +33,29 @@ class MayaSVN:
         pt.initializePumpThread()
         app = QtGui.QApplication(sys.argv)
         self.msgBox = MessageBox()
+        #Testing Variables
+        self.svnURL = "https://192.168.0.22:8443/svn/Dalek/trunk/"
 
-    def checkout_dialog(self):
-        return "https://192.168.0.22:8443/svn/Dalek/trunk/",self.mayaProjectPath
+    #Get Project Path from Maya
+    def get_maya_project_path(self):
+        if(self.maya_enabled):
+            self.mayaProjectPath = "E:\\MayaSVN\\testProject\\"
+            #self.mayaProjectPath =  cmds.workspace(q=True,rd=True)
+        else:
+            self.mayaProjectPath = "E:\\MayaSVN\\testProject\\"
+    
+    #SVN Callbacks
+    def get_login( self,realm, username, may_save):
+        #Open Dialog ask for username & pass
+        username, password = self.login_dialog()
+        dialogRet = True
+        return dialogRet, username, password, True
 
+    def ssl_server_trust_prompt( self,trust_dict ):
+        return True, 3, True
+
+    #SVN Functions
+    #Checkout project files from SVN
     def checkoutProject(self):
         #Open dialog for URL & Path
         url, path = self.checkout_dialog()
@@ -75,10 +68,12 @@ class MayaSVN:
         #Set Maya Project to path
         #
 
+    #Perform an update of SVN Files
     def updateSVN(self):
         self.client.update(self.mayaProjectPath)
         print "SVN Update Completed"
 
+    #Open file in Maya, SVN update & lock file
     def openFile(self,filename):
         #Update SVN before opening file
         filepath = self.mayaProjectPath + filename
@@ -89,6 +84,7 @@ class MayaSVN:
         #
         print "File Opened"
 
+    #Save file commit to svn & unlock
     def saveFile(self, filename,comment):
         #Save & Close File in Maya
         #
@@ -111,12 +107,8 @@ class MayaSVN:
             print "Check In Complete"
         else:
             print "Invalid File"
-        
-        #print self.client.status(filepath)[0].entry.lock_token
 
-    def import_dialog(self):
-        return "https://192.168.0.22:8443/svn/Dalek/trunk/",self.mayaProjectPath
-
+    #Import a Maya project into SVN
     def importProject(self):
         #Update Project Path Variable
         self.get_maya_project_path()
@@ -125,44 +117,22 @@ class MayaSVN:
         self.client.import_(self.mayaProjectPath,url,'New Project Commit',recurse=True)
         print "Import Completed"
 
-#Maya Plugin Code
-def setupMenus():
-    gMainWindow = maya.mel.eval('$temp1=$gMainWindow')
-    cmds.menuItem("openProject",command=OpenProject,edit=True)
-    #Add Project Checkout Option
-    try:
-        cmds.menuItem("svnCheckout",parent="mainFileMenu",label='Checkout Project from SVN',command=CheckoutProject,ia="projectItems")
-    except RuntimeError:
-        cmds.menuItem("svnCheckout",parent="mainFileMenu",label='Checkout Project from SVN',command=CheckoutProject,ia="projectItems",edit=True) 
-    
+    #Dialogs
+    #Dialog for login to SVN
+    def login_dialog(self):
+        global app
+        if(self.maya_enabled):
+            app = QtGui.QApplication(sys.argv)
+            login = LoginDialog()
+            login.show()
+            time.sleep(0.02)
+            app.exec_()
+        return login.getLoginDetails()
 
-def unloadMenus():
-    gMainWindow = maya.mel.eval('$temp1=$gMainWindow')
-    cmds.menuItem("openProject",command="OpenScene",edit=True)
-    cmds.deleteUI("svnCheckout")
-    
-def OpenProject(self):
-    print "Open Scene"
+    #Dialog for checkout from SVN - Asks for URL & Path
+    def checkout_dialog(self):
+        return self.svnURL,self.mayaProjectPath
 
-def CheckoutProject(self):
-    print "Checking Out"
-    svn.checkoutProject()
-
-def initializePlugin(argument = "MayaSVN"):
-    global svn
-    svn = MayaSVN()
-    setupMenus()
-    print "MayaSVN plug-in loaded"
-
-def uninitializePlugin(argument = "MayaSVN"):
-    unloadMenus()
-    print "MayaSVN plug-in unloaded"
-
-
-
-#setupMenus()
-#maya = MayaSVN()
-#maya.checkoutProject()
-#maya.openFile('workspace.mel')
-#maya.saveFile('TestFile.txt','Changed some more stuff')
-#maya.importProject()
+    #Dialog for import into SVN - Asks for URL & Path
+    def import_dialog(self):
+        return self.svnURL,self.mayaProjectPath
