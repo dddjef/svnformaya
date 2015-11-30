@@ -1,0 +1,1 @@
+A Subversion(SVN) Version Control plugin for Autodesk Maya that presents Version Control concepts in a way that is simple for artists and regular users of Maya.
